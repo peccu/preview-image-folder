@@ -15,6 +15,6 @@ browser-sync start \
 
 while true
 do
-    rsync -az --delete $SCPATH/images/* /tmp/public/images/
+    rsync -az --delete $SCPATH/images/ /tmp/public/images/
     sleep 1
 done

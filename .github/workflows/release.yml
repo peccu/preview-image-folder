@@ -27,28 +27,28 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Set to force version number, e.g., when no tag exists.
-      RG_VERSION: TEST-0.0.0
+      APP_VERSION: TEST-0.0.0
     outputs:
       upload_url: ${{ steps.release.outputs.upload_url }}
-      rg_version: ${{ env.RG_VERSION }}
+      app_version: ${{ env.APP_VERSION }}
     steps:
       - name: Get the release version from the tag
         shell: bash
-        if: env.RG_VERSION == ''
+        if: env.APP_VERSION == ''
         run: |
           # Apparently, this is the right way to get a tag name. Really?
           #
           # See: https://github.community/t5/GitHub-Actions/How-to-get-just-the-tag-name/m-p/32167/highlight/true#M1027
-          echo "RG_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-          echo "version is: ${{ env.RG_VERSION }}"
+          echo "APP_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "version is: ${{ env.APP_VERSION }}"
       - name: Create GitHub release
         id: release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ env.RG_VERSION }}
-          release_name: ${{ env.RG_VERSION }}
+          tag_name: ${{ env.APP_VERSION }}
+          release_name: ${{ env.APP_VERSION }}
 
   build-release:
     name: build-release
@@ -66,6 +66,8 @@ jobs:
       RUST_BACKTRACE: 1
       # Build static releases with PCRE2.
       PCRE2_SYS_STATIC: 1
+      # APP Binary name
+      APP_NAME: preview-image-folder
     strategy:
       matrix:
         build: [linux, linux-arm, macos, win-msvc, win-gnu, win32-msvc]
@@ -134,7 +136,7 @@ jobs:
 
     - name: Strip release binary (linux and macos)
       if: matrix.build == 'linux' || matrix.build == 'macos'
-      run: strip "target/${{ matrix.target }}/release/rg"
+      run: strip "target/${{ matrix.target }}/release/$APP_NAME"
 
     - name: Strip release binary (arm)
       if: matrix.build == 'linux-arm'
@@ -143,13 +145,13 @@ jobs:
           "$PWD/target:/target:Z" \
           rustembedded/cross:arm-unknown-linux-gnueabihf \
           arm-linux-gnueabihf-strip \
-          /target/arm-unknown-linux-gnueabihf/release/rg
+          /target/arm-unknown-linux-gnueabihf/release/$APP_NAME
 
     - name: Build archive
       shell: bash
       run: |
         outdir="$(ci/cargo-out-dir "${{ env.TARGET_DIR }}")"
-        staging="ripgrep-${{ needs.create-release.outputs.rg_version }}-${{ matrix.target }}"
+        staging="ripgrep-${{ needs.create-release.outputs.app_version }}-${{ matrix.target }}"
         mkdir -p "$staging"/{complete,doc}
 
         cp {README.md,COPYING,UNLICENSE,LICENSE-MIT} "$staging/"
@@ -158,13 +160,13 @@ jobs:
         cp complete/_rg "$staging/complete/"
 
         if [ "${{ matrix.os }}" = "windows-2019" ]; then
-          cp "target/${{ matrix.target }}/release/rg.exe" "$staging/"
+          cp "target/${{ matrix.target }}/release/$APP_NAME.exe" "$staging/"
           7z a "$staging.zip" "$staging"
           echo "ASSET=$staging.zip" >> $GITHUB_ENV
         else
           # The man page is only generated on Unix systems. ¯\_(ツ)_/¯
-          cp "$outdir"/rg.1 "$staging/doc/"
-          cp "target/${{ matrix.target }}/release/rg" "$staging/"
+          cp "$outdir"/$APP_NAME.1 "$staging/doc/"
+          cp "target/${{ matrix.target }}/release/$APP_NAME" "$staging/"
           tar czf "$staging.tar.gz" "$staging"
           echo "ASSET=$staging.tar.gz" >> $GITHUB_ENV
         fi

@@ -1,12 +1,14 @@
-name: learn-github-actions
+name: release-build
 on: [push]
 jobs:
-  check-bats-version:
+  cargo-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '14'
-      - run: npm install -g bats
-      - run: bats -v
+      - name: Rust MUSL Builder
+        uses: NSCoder/rust-musl-action@v1.0.0
+        env:
+          BUILD_TARGET: x86_64-unknown-linux-musl
+        args: cargo build --target $BUILD_TARGET --release
+      - name: build
+        run: cargo build --release

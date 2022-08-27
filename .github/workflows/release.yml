@@ -31,6 +31,7 @@ jobs:
     outputs:
       upload_url: ${{ steps.release.outputs.upload_url }}
       app_version: ${{ env.APP_VERSION }}
+      pj_name: ${{ env.PJ_NAME }}
     steps:
       - name: Get the release version from the tag
         shell: bash
@@ -156,7 +157,7 @@ jobs:
       shell: bash
       run: |
         outdir="$(ci/cargo-out-dir "${{ env.TARGET_DIR }}")"
-        staging="${{ env.PJ_NAME }}-${{ needs.create-release.outputs.app_version }}-${{ matrix.target }}"
+        staging="${{ needs.create-release.outputs.pj_name }}-${{ needs.create-release.outputs.app_version }}-${{ matrix.target }}"
         mkdir -p "$staging"
         # mkdir -p "$staging"/{complete,doc}
 

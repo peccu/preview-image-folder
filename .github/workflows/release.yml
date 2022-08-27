@@ -17,17 +17,17 @@ name: release
 on:
   push:
     # Enable when testing release infrastructure on a branch.
-    # branches:
-    # - ag/work
-    tags:
-    - "[0-9]+.[0-9]+.[0-9]+"
+    branches:
+      - rust
+    # tags:
+    # - "[0-9]+.[0-9]+.[0-9]+"
 jobs:
   create-release:
     name: create-release
     runs-on: ubuntu-latest
-    # env:
+    env:
       # Set to force version number, e.g., when no tag exists.
-      # RG_VERSION: TEST-0.0.0
+      RG_VERSION: TEST-0.0.0
     outputs:
       upload_url: ${{ steps.release.outputs.upload_url }}
       rg_version: ${{ env.RG_VERSION }}
@@ -97,9 +97,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 1
+      uses: actions/checkout@v3
 
     - name: Install packages (Ubuntu)
       if: matrix.os == 'ubuntu-18.04'

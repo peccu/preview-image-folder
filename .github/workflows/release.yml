@@ -156,7 +156,7 @@ jobs:
       shell: bash
       run: |
         outdir="$(ci/cargo-out-dir "${{ env.TARGET_DIR }}")"
-        staging="${PJ_NAME}-${{ needs.create-release.outputs.app_version }}-${{ matrix.target }}"
+        staging="${{ env.PJ_NAME }}-${{ needs.create-release.outputs.app_version }}-${{ matrix.target }}"
         mkdir -p "$staging"
         # mkdir -p "$staging"/{complete,doc}
 

@@ -41,6 +41,10 @@ jobs:
           # See: https://github.community/t5/GitHub-Actions/How-to-get-just-the-tag-name/m-p/32167/highlight/true#M1027
           echo "APP_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
           echo "version is: ${{ env.APP_VERSION }}"
+      - name: Get project name from github env
+        shell: bash
+        run: |
+          echo "PJ_NAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}" >> $GITHUB_ENV
       - name: Create GitHub release
         id: release
         uses: actions/create-release@v1
@@ -67,9 +71,7 @@ jobs:
       # Build static releases with PCRE2.
       PCRE2_SYS_STATIC: 1
       # APP Binary name
-      APP_NAME: preview-image-folder
-      # APP project-name
-      PJ_NAME: preview-image-folder
+      BIN_NAME: preview-image-folder
     strategy:
       matrix:
         build: [linux, linux-arm, macos, win-msvc, win-gnu, win32-msvc]
@@ -90,10 +92,10 @@ jobs:
           os: windows-2019
           rust: nightly
           target: x86_64-pc-windows-msvc
-        - build: win-gnu
-          os: windows-2019
-          rust: nightly-x86_64-gnu
-          target: x86_64-pc-windows-gnu
+        # - build: win-gnu
+        #   os: windows-2019
+        #   rust: nightly-x86_64-gnu
+        #   target: x86_64-pc-windows-gnu
         - build: win32-msvc
           os: windows-2019
           rust: nightly
@@ -138,7 +140,7 @@ jobs:
 
     - name: Strip release binary (linux and macos)
       if: matrix.build == 'linux' || matrix.build == 'macos'
-      run: strip "target/${{ matrix.target }}/release/$APP_NAME"
+      run: strip "target/${{ matrix.target }}/release/$BIN_NAME"
 
     - name: Strip release binary (arm)
       if: matrix.build == 'linux-arm'
@@ -147,7 +149,7 @@ jobs:
           "$PWD/target:/target:Z" \
           rustembedded/cross:arm-unknown-linux-gnueabihf \
           arm-linux-gnueabihf-strip \
-          /target/arm-unknown-linux-gnueabihf/release/$APP_NAME
+          /target/arm-unknown-linux-gnueabihf/release/$BIN_NAME
 
     - name: Build archive
       shell: bash
@@ -163,13 +165,13 @@ jobs:
         # cp complete/_rg "$staging/complete/"
 
         if [ "${{ matrix.os }}" = "windows-2019" ]; then
-          cp "target/${{ matrix.target }}/release/$APP_NAME.exe" "$staging/"
+          cp "target/${{ matrix.target }}/release/$BIN_NAME.exe" "$staging/"
           7z a "$staging.zip" "$staging"
           echo "ASSET=$staging.zip" >> $GITHUB_ENV
         else
           # The man page is only generated on Unix systems. ¯\_(ツ)_/¯
-          # cp "$outdir"/$APP_NAME.1 "$staging/doc/"
-          cp "target/${{ matrix.target }}/release/$APP_NAME" "$staging/"
+          # cp "$outdir"/$BIN_NAME.1 "$staging/doc/"
+          cp "target/${{ matrix.target }}/release/$BIN_NAME" "$staging/"
           tar czf "$staging.tar.gz" "$staging"
           echo "ASSET=$staging.tar.gz" >> $GITHUB_ENV
         fi

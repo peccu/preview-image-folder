@@ -16,10 +16,15 @@ static INDEX_HTML: &'static [u8] = br#"
 				<input type="submit" value="Send">
 			</form>
       <script>
-        var socket = new WebSocket("ws://" + window.location.host + "/ws");
+        var proto = !!location.protocol.match(/s:$/) ? "wss://" : "ws://";
+        var socket = new WebSocket(proto + window.location.host + "/ws");
         socket.onmessage = function (event) {
           var messages = document.getElementById("messages");
           messages.append(event.data + "\n");
+        };
+        socket.onerror = function (event) {
+            var messages = document.getElementById("messages");
+            messages.append("error: " + JSON.stringify(event, null, 2) + "\n");  
         };
         var form = document.getElementById("form");
         form.addEventListener('submit', function (event) {
@@ -49,6 +54,8 @@ impl Handler for Server {
             // Create a custom response
             "/" => Ok(Response::new(200, "OK", INDEX_HTML.to_vec())),
 
+            "/index.html" => Ok(Response::new(200, "OK", INDEX_HTML.to_vec())),
+
             _ => Ok(Response::new(404, "Not Found", b"404 - Not Found".to_vec())),
         }
     }
@@ -64,25 +71,3 @@ fn main() {
     // Listen on an address and call the closure for each connection
     listen("127.0.0.1:8000", |out| Server { out }).unwrap()
 }
-
-// fn main() {
-//     println!("Hello, world!");
-
-//     // // Setup logging
-//     // env_logger::init();
-
-//     // Listen on an address and call the closure for each connection
-//     if let Err(error) = listen("127.0.0.1:8000", |out| {
-//         // The handler needs to take ownership of out, so we use move
-//         move |msg| {
-//             // Handle messages received on this connection
-//             println!("Server got message '{}'. ", msg);
-
-//             // Use the out channel to send messages back
-//             out.send(msg)
-//         }
-//     }) {
-//         // Inform the user of failure
-//         println!("Failed to create WebSocket due to {:?}", error);
-//     }
-// }

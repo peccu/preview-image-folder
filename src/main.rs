@@ -1,6 +1,11 @@
+extern crate clap;
+extern crate env_logger;
+
 /// An example of a chat web application server
 extern crate ws;
 use ws::{listen, Handler, Message, Request, Response, Result, Sender};
+
+use clap::{App, Arg};
 
 // This can be read from a file
 static INDEX_HTML: &'static [u8] = br#"
@@ -67,7 +72,42 @@ impl Handler for Server {
     }
 }
 fn main() {
-    println!("Helo world! listening 8000");
+    // Setup logging
+    env_logger::init();
+
+    // Parse command line arguments
+    let matches = App::new("Preview Image Folder with auto refresh.")
+        .version("0.1")
+        .about("Show images in specified folder and refresh when images in folder is updated.")
+        .arg(
+            Arg::with_name("host")
+                .long("host")
+                .default_value("127.0.0.1")
+                .value_name("HOST")
+                .help("Set the host to listen for web page."),
+        )
+        .arg(
+            Arg::with_name("port")
+                .short('p')
+                .long("port")
+                .default_value("8000")
+                .value_name("PORT")
+                .help("Set the port to listen for web page."),
+        )
+        .arg(
+            Arg::with_name("directory")
+                .value_name("DIRECTORIES")
+                .help("Directories which include images.")
+                .multiple(true),
+        )
+        .get_matches();
+
+    let host = matches.value_of("host").unwrap();
+    let port = matches.value_of("port").unwrap();
+    println!(
+        "Listening on http://{}:{}/ (If this is running in the container, you should change url)",
+        host, port
+    );
     // Listen on an address and call the closure for each connection
-    listen("127.0.0.1:8000", |out| Server { out }).unwrap()
+    listen(format!("{}:{}", host, port), |out| Server { out }).unwrap();
 }

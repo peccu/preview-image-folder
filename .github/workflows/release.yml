@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Set to force version number, e.g., when no tag exists.
-      APP_VERSION: TEST-0.0.2
+      APP_VERSION: TEST-0.0.3
     outputs:
       upload_url: ${{ steps.release.outputs.upload_url }}
       app_version: ${{ env.APP_VERSION }}
@@ -76,12 +76,16 @@ jobs:
     strategy:
       matrix:
         # build: [linux, linux-arm, macos, win-msvc, win-gnu, win32-msvc]
-        build: [linux, linux-arm, macos, win-msvc, win32-msvc]
+        build: [linux, linux32, linux-arm, macos, win-msvc, win32-msvc]
         include:
         - build: linux
           os: ubuntu-18.04
           rust: nightly
           target: x86_64-unknown-linux-musl
+        - build: linux32
+          os: ubuntu-18.04
+          rust: nightly
+          target: i586-unknown-linux-musl
         - build: linux-arm
           os: ubuntu-18.04
           rust: nightly

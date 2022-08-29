@@ -10,8 +10,8 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use clap::{App, Arg};
+use notify::DebouncedEvent::{Create, Write};
 use notify::{watcher, RecursiveMode, Watcher};
-use notify::DebouncedEvent::{Write, Create};
 use ws::{connect, listen, CloseCode, Handler, Message, Request, Response, Result, Sender};
 
 // This can be read from a file
@@ -53,18 +53,19 @@ static INDEX_HTML_TAIL: &'static [u8] = br#"
 </html>
     "#;
 
-fn genpage(target: String) -> Vec<u8> {
-    let files = fs::read_dir(target).unwrap();
-    
+fn genpage(target: &str) -> Vec<u8> {
+    let _files = fs::read_dir(target).unwrap();
+
     [INDEX_HTML_HEAD, INDEX_HTML_TAIL].concat()
 }
 
 // Server web application handler
-struct Server {
+struct Server<'a> {
     out: Sender,
+    target: &'a str,
 }
 
-impl Handler for Server {
+impl Handler for Server<'_> {
     //
     fn on_request(&mut self, req: &Request) -> Result<Response> {
         // Using multiple handlers is better (see router example)
@@ -73,9 +74,9 @@ impl Handler for Server {
             "/ws" => Response::from_request(req),
 
             // Create a custom response
-            "/" => Ok(Response::new(200, "OK", genpage())),
+            "/" => Ok(Response::new(200, "OK", genpage(self.target))),
 
-            "/index.html" => Ok(Response::new(200, "OK", genpage())),
+            "/index.html" => Ok(Response::new(200, "OK", genpage(self.target))),
 
             _ => Ok(Response::new(404, "Not Found", b"404 - Not Found".to_vec())),
         }
@@ -119,6 +120,9 @@ fn main() {
         )
         .get_matches();
 
+    let target = matches.value_of("directory").unwrap();
+    println!("watching: {}", target);
+
     let host = matches.value_of("host").unwrap();
     let port = matches.value_of("port").unwrap();
     let url: String = format!("{}:{}", host, port);
@@ -130,13 +134,17 @@ fn main() {
 
     // Server thread
     // Listen on an address and call the closure for each connection
-    let server = thread::spawn(move || listen(server_url, |out| Server { out }).unwrap());
+    let server_target = format!("{}", target);
+    let server = thread::spawn(move || {
+        listen(server_url, |out| Server {
+            out,
+            target: &server_target,
+        })
+        .unwrap()
+    });
 
     // Give the server a little time to get going
     sleep(Duration::from_millis(10));
-
-    let target = matches.value_of("directory").unwrap();
-    println!("watching: {}", target);
 
     let (sender, receiver) = channel();
     let mut watcher = watcher(sender, Duration::from_secs(1)).unwrap();
@@ -164,7 +172,7 @@ fn main() {
                 match event {
                     Create(_) => refresh(client_url),
                     Write(_) => refresh(client_url),
-                    _ => Ok(())
+                    _ => Ok(()),
                 };
             }
             Err(e) => println!("watch error: {:?}", e),

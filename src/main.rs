@@ -1,11 +1,17 @@
 extern crate clap;
 extern crate env_logger;
-
-/// An example of a chat web application server
+extern crate notify; // 5.0.0 looks good but not released. this is 4.0.17.
 extern crate ws;
-use ws::{listen, Handler, Message, Request, Response, Result, Sender};
+
+use std::sync::mpsc::channel;
+use std::thread;
+use std::thread::sleep;
+use std::time::Duration;
 
 use clap::{App, Arg};
+use notify::{watcher, RecursiveMode, Watcher};
+use notify::DebouncedEvent::{Write, Create};
+use ws::{connect, listen, CloseCode, Handler, Message, Request, Response, Result, Sender};
 
 // This can be read from a file
 static INDEX_HTML: &'static [u8] = br#"
@@ -71,6 +77,7 @@ impl Handler for Server {
         self.out.broadcast(msg)
     }
 }
+
 fn main() {
     // Setup logging
     env_logger::init();
@@ -96,18 +103,68 @@ fn main() {
         )
         .arg(
             Arg::with_name("directory")
-                .value_name("DIRECTORIES")
-                .help("Directories which include images.")
-                .multiple(true),
+                .value_name("DIRECTORY")
+                .default_value(".")
+                .help("Directory which include images."), //.multiple(true),
         )
         .get_matches();
 
     let host = matches.value_of("host").unwrap();
     let port = matches.value_of("port").unwrap();
+    let url: String = format!("{}:{}", host, port);
+    let server_url = url.clone();
     println!(
-        "Listening on http://{}:{}/ (If this is running in the container, you should change url)",
-        host, port
+        "Listening on http://{}/ (If this is running in the container, you should change url)",
+        server_url
     );
+
+    // Server thread
     // Listen on an address and call the closure for each connection
-    listen(format!("{}:{}", host, port), |out| Server { out }).unwrap();
+    let server = thread::spawn(move || listen(server_url, |out| Server { out }).unwrap());
+
+    // Give the server a little time to get going
+    sleep(Duration::from_millis(10));
+
+    let target = matches.value_of("directory").unwrap();
+    println!("watching: {}", target);
+
+    let (sender, receiver) = channel();
+    let mut watcher = watcher(sender, Duration::from_secs(1)).unwrap();
+    watcher.watch(target, RecursiveMode::NonRecursive).unwrap();
+
+    // send refresh message
+    fn refresh(url: String) -> Result<()> {
+        connect(format!("ws://{}/ws", url), |out| {
+            out.send("refresh!").unwrap();
+
+            move |msg| {
+                println!("Client got message '{}'. ", msg);
+                out.close(CloseCode::Normal)
+            }
+        })
+        .unwrap();
+        Ok(())
+    }
+
+    let client = thread::spawn(move || loop {
+        match receiver.recv() {
+            Ok(event) => {
+                println!("event {:?}", event);
+                let client_url = url.clone();
+                match event {
+                    Create(_) => refresh(client_url),
+                    Write(_) => refresh(client_url),
+                    _ => Ok(())
+                };
+            }
+            Err(e) => println!("watch error: {:?}", e),
+        };
+    });
+
+    let _ = server.join();
+    let _ = client.join();
+
+    println!("All done.")
 }
+
+// curl -Lo 1.png https://picsum.photos/200/300

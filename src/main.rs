@@ -3,6 +3,7 @@ extern crate env_logger;
 extern crate notify; // 5.0.0 looks good but not released. this is 4.0.17.
 extern crate ws;
 
+use std::fs;
 use std::sync::mpsc::channel;
 use std::thread;
 use std::thread::sleep;
@@ -14,7 +15,7 @@ use notify::DebouncedEvent::{Write, Create};
 use ws::{connect, listen, CloseCode, Handler, Message, Request, Response, Result, Sender};
 
 // This can be read from a file
-static INDEX_HTML: &'static [u8] = br#"
+static INDEX_HTML_HEAD: &'static [u8] = br#"
 <!DOCTYPE html>
 <html>
 	<head>
@@ -26,6 +27,9 @@ static INDEX_HTML: &'static [u8] = br#"
 				<input type="text" id="msg">
 				<input type="submit" value="Send">
 			</form>
+    "#;
+
+static INDEX_HTML_TAIL: &'static [u8] = br#"
       <script>
         var proto = !!location.protocol.match(/s:$/) ? "wss://" : "ws://";
         var socket = new WebSocket(proto + window.location.host + "/ws");
@@ -49,6 +53,12 @@ static INDEX_HTML: &'static [u8] = br#"
 </html>
     "#;
 
+fn genpage(target: String) -> Vec<u8> {
+    let files = fs::read_dir(target).unwrap();
+    
+    [INDEX_HTML_HEAD, INDEX_HTML_TAIL].concat()
+}
+
 // Server web application handler
 struct Server {
     out: Sender,
@@ -63,9 +73,9 @@ impl Handler for Server {
             "/ws" => Response::from_request(req),
 
             // Create a custom response
-            "/" => Ok(Response::new(200, "OK", INDEX_HTML.to_vec())),
+            "/" => Ok(Response::new(200, "OK", genpage())),
 
-            "/index.html" => Ok(Response::new(200, "OK", INDEX_HTML.to_vec())),
+            "/index.html" => Ok(Response::new(200, "OK", genpage())),
 
             _ => Ok(Response::new(404, "Not Found", b"404 - Not Found".to_vec())),
         }

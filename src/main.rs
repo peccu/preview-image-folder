@@ -20,11 +20,37 @@ use ws::{connect, listen, CloseCode, Handler, Message, Request, Response, Result
 // This can be read from a file
 static INDEX_HTML_HEAD: &'static [u8] = br#"
 <!DOCTYPE html>
-<html>
-	<head>
-		<meta charset="utf-8">
-	</head>
-	<body>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview images</title>
+    <style>
+      *, html, body {
+          margin: 0px;
+          padding: 0px;
+      }
+      h1 {
+          padding: 1em 0px;
+      }
+      .image, .image img {
+          max-width: 100%;
+      }
+      .name {
+          margin-bottom: 5px;
+          padding-left: 3px;
+          border-left: solid 10px gray;
+          border-bottom: solid 1px gray;
+      }
+      .item {
+          margin-bottom: 15px;
+      }
+    </style>
+</head>
+<body>
+    <h1>Preview Images in folder.</h1>
+
       <pre id="messages"></pre>
 			<form id="form">
 				<input type="text" id="msg">
@@ -57,7 +83,7 @@ static INDEX_HTML_TAIL: &'static [u8] = br#"
         });
         var show_images = (data) => {
             append("images: " + JSON.stringify(data, null, 2) + "\n")
-            var list = data.filter(e=>e.match(/\.png$/)).map(e=>`<div><div>${e}</div><div><img src="${e}"/></div>`).join("\n")
+            var list = data.filter(e=>e.match(/\.png$/)).map(e=>`<div class="item"><div class="name">${e}</div><div class="image"><img src="${e}"/></div></div>`).join("\n")
             console.log(list);
             var images = document.getElementById("images");
             images.innerHTML = list;

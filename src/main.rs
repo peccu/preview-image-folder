@@ -3,7 +3,10 @@ extern crate env_logger;
 extern crate notify; // 5.0.0 looks good but not released. this is 4.0.17.
 extern crate ws;
 
+use std::env;
 use std::fs;
+use std::fs::File;
+use std::io::Read;
 use std::sync::mpsc::channel;
 use std::thread;
 use std::thread::sleep;
@@ -27,19 +30,23 @@ static INDEX_HTML_HEAD: &'static [u8] = br#"
 				<input type="text" id="msg">
 				<input type="submit" value="Send">
 			</form>
+            <div id="images"><div>
     "#;
 
 static INDEX_HTML_TAIL: &'static [u8] = br#"
       <script>
+        const append = (message) => {
+            var messages = document.getElementById("messages");
+            messages.append(message);
+        };
         var proto = !!location.protocol.match(/s:$/) ? "wss://" : "ws://";
         var socket = new WebSocket(proto + window.location.host + "/ws");
         socket.onmessage = function (event) {
-          var messages = document.getElementById("messages");
-          messages.append(event.data + "\n");
+          append(event.data + "\n");
+          fetch_images();
         };
         socket.onerror = function (event) {
-            var messages = document.getElementById("messages");
-            messages.append("error: " + JSON.stringify(event, null, 2) + "\n");  
+            append("error: " + JSON.stringify(event, null, 2) + "\n")
         };
         var form = document.getElementById("form");
         form.addEventListener('submit', function (event) {
@@ -48,15 +55,49 @@ static INDEX_HTML_TAIL: &'static [u8] = br#"
           socket.send(input.value);
           input.value = "";
         });
+        var show_images = (data) => {
+            append("images: " + JSON.stringify(data, null, 2) + "\n")
+            var list = data.filter(e=>e.match(/\.png$/)).map(e=>`<div><div>${e}</div><div><img src="${e}"/></div>`).join("\n")
+            console.log(list);
+            var images = document.getElementById("images");
+            images.innerHTML = list;
+        };
+        var images = fetch("./images.json").then(r => r.json()).then(show_images)
+        var fetch_images = () => {
+            fetch("./images.json")
+            .then((response) => response.json())
+            .then((data) => {
+                console.log(data);
+                show_images(data);
+            });
+        }
 		</script>
 	</body>
 </html>
     "#;
 
-fn genpage(target: &str) -> Vec<u8> {
-    let _files = fs::read_dir(target).unwrap();
+fn genpage() -> Vec<u8> {
+    [INDEX_HTML_HEAD, INDEX_HTML_TAIL].concat().to_vec()
+}
 
-    [INDEX_HTML_HEAD, INDEX_HTML_TAIL].concat()
+fn list_images(target: &str) -> Vec<u8> {
+    // https://stackoverflow.com/a/31226040
+    let entries = fs::read_dir(target)
+        .unwrap()
+        .filter_map(|res| {
+            res.ok().and_then(|e| {
+                e.path()
+                    .file_name()
+                    .and_then(|n| n.to_str().map(|s| String::from(s)))
+            })
+        })
+        .collect::<Vec<String>>();
+    // TODO sort by descending
+
+    // https://gist.github.com/jimmychu0807/9a89355e642afad0d2aeda52e6ad2424
+    format!("[\"{}\"]", entries.join("\",\""))
+        .as_bytes()
+        .to_vec()
 }
 
 // Server web application handler
@@ -74,11 +115,18 @@ impl Handler for Server<'_> {
             "/ws" => Response::from_request(req),
 
             // Create a custom response
-            "/" => Ok(Response::new(200, "OK", genpage(self.target))),
+            "/" => Ok(Response::new(200, "OK", genpage())),
 
-            "/index.html" => Ok(Response::new(200, "OK", genpage(self.target))),
+            "/index.html" => Ok(Response::new(200, "OK", genpage())),
 
-            _ => Ok(Response::new(404, "Not Found", b"404 - Not Found".to_vec())),
+            "/images.json" => Ok(Response::new(200, "OK", list_images(self.target))),
+
+            other => Ok(Response::new(
+                200,
+                "OK",
+                read_file(format!(".{}", other).as_str()),
+            )),
+            // _ => Ok(Response::new(404, "Not Found", b"404 - Not Found".to_vec())),
         }
     }
 
@@ -86,6 +134,22 @@ impl Handler for Server<'_> {
     fn on_message(&mut self, msg: Message) -> Result<()> {
         // Broadcast to all connections
         self.out.broadcast(msg)
+    }
+}
+
+fn _read_file(name: &str) -> std::io::Result<Vec<u8>> {
+    let mut file = File::open(name)?;
+    let mut buf = Vec::new();
+    file.read_to_end(&mut buf)?;
+    Ok(buf)
+}
+
+fn read_file(name: &str) -> Vec<u8> {
+    let path = env::current_dir();
+    println!("pwd: {:?} -> {:?}", path, name);
+    match _read_file(name) {
+        Ok(buf) => buf,
+        _ => b"Error".to_vec(),
     }
 }
 
@@ -122,6 +186,8 @@ fn main() {
 
     let target = matches.value_of("directory").unwrap();
     println!("watching: {}", target);
+
+    println!("{:?}", std::str::from_utf8(&list_images(target)).unwrap());
 
     let host = matches.value_of("host").unwrap();
     let port = matches.value_of("port").unwrap();

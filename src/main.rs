@@ -52,10 +52,10 @@ static INDEX_HTML_HEAD: &'static [u8] = br#"
     <h1>Preview Images in folder.</h1>
 
       <pre id="messages"></pre>
-			<form id="form">
-				<input type="text" id="msg">
-				<input type="submit" value="Send">
-			</form>
+      <form id="form">
+        <input type="text" id="msg">
+        <input type="submit" value="Send">
+      </form>
             <div id="images"><div>
     "#;
 
@@ -97,8 +97,8 @@ static INDEX_HTML_TAIL: &'static [u8] = br#"
                 show_images(data);
             });
         }
-		</script>
-	</body>
+    </script>
+  </body>
 </html>
     "#;
 

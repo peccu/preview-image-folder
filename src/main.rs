@@ -151,7 +151,7 @@ impl Handler for Server<'_> {
             other => Ok(Response::new(
                 200,
                 "OK",
-                read_file(format!(".{}", decode(other).expect("UTF-8")).as_str()),
+                read_file(format!("{}{}", self.target, decode(other).expect("UTF-8")).as_str()),
             )),
             // _ => Ok(Response::new(404, "Not Found", b"404 - Not Found".to_vec())),
         }

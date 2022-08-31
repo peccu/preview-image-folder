@@ -3,8 +3,9 @@ services:
   app:
     build: ./build
     restart: always
+    stop_signal: SIGKILL
     ports:
-      - "3939:3000"
+      - "3939:8000"
     volumes:
       - ~/Downloads/ScreenCapture:/app/images
 

@@ -1,11 +1,14 @@
-FROM node:16-alpine
+FROM alpine:latest
 
 RUN apk add --update --no-cache rsync
-ADD . /app/
+ENV version=TEST-0.0.9
+ADD https://github.com/peccu/preview-image-folder/releases/download/${version}/preview-image-folder-${version}-x86_64-unknown-linux-musl.tar.gz /app/
 
 WORKDIR /app
-RUN chmod 755 *.sh
-RUN npm i
+RUN tar xzf preview-image-folder-${version}-x86_64-unknown-linux-musl.tar.gz \
+        && mv preview-image-folder-${version}-x86_64-unknown-linux-musl/preview-image-folder ./ \
+        && rm -rf preview-image-folder-${version}-x86_64-unknown-linux-musl.tar.gz preview-image-folder-${version}-x86_64-unknown-linux-musl
+ADD start.sh /app/
 
 VOLUME /app/images
-CMD ["npm", "run", "dev"]
+CMD ["./start.sh"]

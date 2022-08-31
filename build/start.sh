@@ -1,17 +1,10 @@
 #!/bin/sh
 SCPATH=$(cd $(dirname $0);pwd)
-cd /tmp
-mkdir -p public/images
-nodemon \
-  --watch public/images \
-  -e png,jpg \
-  --exec $SCPATH/make.sh &
+cd $SCPATH
 
-cd public
-browser-sync start \
-  --server \
-  --no-open \
-  --files './index.html' &
+mkdir -p /tmp/public/images
+
+/app/preview-image-folder --host 0.0.0.0 /tmp/public/images &
 
 while true
 do

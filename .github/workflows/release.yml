@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Set to force version number, e.g., when no tag exists.
-      APP_VERSION: TEST-0.0.8
+      APP_VERSION: TEST-0.0.9
     outputs:
       upload_url: ${{ steps.release.outputs.upload_url }}
       app_version: ${{ env.APP_VERSION }}

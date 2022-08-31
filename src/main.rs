@@ -3,6 +3,7 @@ extern crate env_logger;
 extern crate notify; // 5.0.0 looks good but not released. this is 4.0.17.
 extern crate ws;
 
+use urlencoding::decode;
 use std::env;
 use std::fs;
 use std::fs::File;
@@ -150,7 +151,7 @@ impl Handler for Server<'_> {
             other => Ok(Response::new(
                 200,
                 "OK",
-                read_file(format!(".{}", other).as_str()),
+                read_file(format!(".{}", decode(other).expect("UTF-8")).as_str()),
             )),
             // _ => Ok(Response::new(404, "Not Found", b"404 - Not Found".to_vec())),
         }

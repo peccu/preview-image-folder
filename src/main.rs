@@ -192,7 +192,7 @@ fn main() {
                 .long("host")
                 .default_value("127.0.0.1")
                 .value_name("HOST")
-                .help("Set the host to listen for web page."),
+                .help("Set the host to listen for web page. If you use in container, you should set this into 0.0.0.0"),
         )
         .arg(
             Arg::with_name("port")

@@ -1,6 +1,6 @@
 extern crate clap;
 extern crate env_logger;
-extern crate notify; // 5.0.0 looks good but not released. this is 4.0.17.
+extern crate notify;
 extern crate ws;
 
 use urlencoding::decode;
@@ -8,15 +8,20 @@ use std::env;
 use std::fs;
 use std::fs::File;
 use std::io::Read;
+// use std::path::Path;
 use std::sync::mpsc::channel;
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
 
 use clap::{App, Arg};
+// v5
+// use notify::{Watcher, RecursiveMode, Event};
+// use notify::EventKind::{Create, Modify, Remove};
+// v4
 use notify::DebouncedEvent::{Create, Write, Remove, Rename};
 use notify::{watcher, RecursiveMode, Watcher};
-use ws::{connect, listen, CloseCode, Handler, Message, Request, Response, Result, Sender};
+use ws::{connect, listen, CloseCode, Handler, Message, Request, Response, Sender};
 
 // This can be read from a file
 static INDEX_HTML_HEAD: &'static [u8] = br#"
@@ -132,7 +137,7 @@ struct Server<'a> {
 
 impl Handler for Server<'_> {
     //
-    fn on_request(&mut self, req: &Request) -> Result<Response> {
+    fn on_request(&mut self, req: &Request) -> ws::Result<Response> {
         // Using multiple handlers is better (see router example)
         match req.resource() {
             // The default trait implementation
@@ -155,7 +160,7 @@ impl Handler for Server<'_> {
     }
 
     // Handle messages recieved in the websocket (in this case, only on /ws)
-    fn on_message(&mut self, msg: Message) -> Result<()> {
+    fn on_message(&mut self, msg: Message) -> ws::Result<()> {
         // Broadcast to all connections
         self.out.broadcast(msg)
     }
@@ -236,12 +241,8 @@ fn main() {
     // Give the server a little time to get going
     sleep(Duration::from_millis(10));
 
-    let (sender, receiver) = channel();
-    let mut watcher = watcher(sender, Duration::from_secs(1)).unwrap();
-    watcher.watch(target, RecursiveMode::NonRecursive).unwrap();
-
     // send refresh message
-    fn refresh(url: String) -> Result<()> {
+    fn refresh(url: String) -> ws::Result<()> {
         connect(format!("ws://{}/ws", url), |out| {
             out.send("refresh!").unwrap();
 
@@ -254,6 +255,29 @@ fn main() {
         Ok(())
     }
 
+    // v5
+    // let mut watcher = notify::recommended_watcher(move |res: Result<Event, _>| {
+    //     println!("event {:?}", res);
+    //     res.ok().and_then(|event| {
+    //         println!("event {:?}", event);
+    //         let client_url = url.clone();
+    //         match event.kind {
+    //             Create(_) => Some(refresh(client_url)),
+    //             Modify(_) => Some(refresh(client_url)),
+    //             Remove(_) => Some(refresh(client_url)),
+    //             _ => Some(Ok(())),
+    //         }
+    //     }).unwrap().unwrap()
+    // }).unwrap();
+    // let client_target = format!("{}", target);
+    // let client = thread::spawn(move || {
+    //     watcher.watch(Path::new(&client_target), RecursiveMode::Recursive).unwrap();
+    // });
+
+    // v4
+    let (sender, receiver) = channel();
+    let mut watcher = watcher(sender, Duration::from_secs(1)).unwrap();
+    watcher.watch(target, RecursiveMode::NonRecursive).unwrap();
     let client = thread::spawn(move || loop {
         match receiver.recv() {
             Ok(event) => {

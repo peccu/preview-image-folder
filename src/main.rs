@@ -14,7 +14,7 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use clap::{App, Arg};
-use notify::DebouncedEvent::{Create, Write};
+use notify::DebouncedEvent::{Create, Write, Remove, Rename};
 use notify::{watcher, RecursiveMode, Watcher};
 use ws::{connect, listen, CloseCode, Handler, Message, Request, Response, Result, Sender};
 
@@ -262,6 +262,8 @@ fn main() {
                 match event {
                     Create(_) => refresh(client_url),
                     Write(_) => refresh(client_url),
+                    Remove(_) => refresh(client_url),
+                    Rename(_, _) => refresh(client_url),
                     _ => Ok(()),
                 };
             }

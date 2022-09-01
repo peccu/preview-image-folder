@@ -289,10 +289,10 @@ fn main() {
                     Remove(_) => refresh(client_url),
                     Rename(_, _) => refresh(client_url),
                     _ => Ok(()),
-                };
+                }.unwrap()
             }
             Err(e) => println!("watch error: {:?}", e),
-        };
+        }
     });
 
     let _ = server.join();

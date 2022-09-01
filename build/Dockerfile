@@ -1,7 +1,7 @@
 FROM alpine:latest
 
 RUN apk add --update --no-cache rsync
-ENV version=TEST-0.0.10
+ENV version=TEST-0.0.11
 ADD https://github.com/peccu/preview-image-folder/releases/download/${version}/preview-image-folder-${version}-x86_64-unknown-linux-musl.tar.gz /app/
 
 WORKDIR /app

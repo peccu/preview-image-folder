@@ -70,13 +70,6 @@ static INDEX_HTML_TAIL: &'static [u8] = br#"
         socket.onerror = function (event) {
             append("error: " + JSON.stringify(event, null, 2) + "\n")
         };
-        var form = document.getElementById("form");
-        form.addEventListener('submit', function (event) {
-          event.preventDefault();
-          var input = document.getElementById("msg");
-          socket.send(input.value);
-          input.value = "";
-        });
         var show_images = (data) => {
             // append("images: " + JSON.stringify(data, null, 2) + "\n")
             var list = data

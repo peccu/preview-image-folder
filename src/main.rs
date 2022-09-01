@@ -51,14 +51,9 @@ static INDEX_HTML_HEAD: &'static [u8] = br#"
 </head>
 <body>
     <h1>Preview Images in folder.</h1>
-
-      <pre id="messages"></pre>
-      <form id="form">
-        <input type="text" id="msg">
-        <input type="submit" value="Send">
-      </form>
-            <div id="images"><div>
-    "#;
+    <pre id="messages"></pre>
+    <div id="images"><div>
+"#;
 
 static INDEX_HTML_TAIL: &'static [u8] = br#"
       <script>
@@ -69,7 +64,7 @@ static INDEX_HTML_TAIL: &'static [u8] = br#"
         var proto = !!location.protocol.match(/s:$/) ? "wss://" : "ws://";
         var socket = new WebSocket(proto + window.location.host + "/ws");
         socket.onmessage = function (event) {
-          append(event.data + "\n");
+          // append(event.data + "\n");
           fetch_images();
         };
         socket.onerror = function (event) {
@@ -83,8 +78,17 @@ static INDEX_HTML_TAIL: &'static [u8] = br#"
           input.value = "";
         });
         var show_images = (data) => {
-            append("images: " + JSON.stringify(data, null, 2) + "\n")
-            var list = data.filter(e=>e.match(/\.png$/)).sort().reverse().map(e=>`<div class="item"><div class="name">${e}</div><div class="image"><img src="${e}"/></div></div>`).join("\n")
+            // append("images: " + JSON.stringify(data, null, 2) + "\n")
+            var list = data
+                .filter(e=>e.match(/\.png$/))
+                .sort().reverse()
+                .map(e=>`
+        <div class="item">
+            <div class="name">${e}</div>
+            <div class="image">
+                <img src="${e}"/>
+            </div>
+        </div>`).join("\n");
             console.log(list);
             var images = document.getElementById("images");
             images.innerHTML = list;
@@ -101,7 +105,7 @@ static INDEX_HTML_TAIL: &'static [u8] = br#"
     </script>
   </body>
 </html>
-    "#;
+"#;
 
 fn genpage() -> Vec<u8> {
     [INDEX_HTML_HEAD, INDEX_HTML_TAIL].concat().to_vec()

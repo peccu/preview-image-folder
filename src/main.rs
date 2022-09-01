@@ -84,7 +84,7 @@ static INDEX_HTML_TAIL: &'static [u8] = br#"
         });
         var show_images = (data) => {
             append("images: " + JSON.stringify(data, null, 2) + "\n")
-            var list = data.filter(e=>e.match(/\.png$/)).map(e=>`<div class="item"><div class="name">${e}</div><div class="image"><img src="${e}"/></div></div>`).join("\n")
+            var list = data.filter(e=>e.match(/\.png$/)).sort().reverse().map(e=>`<div class="item"><div class="name">${e}</div><div class="image"><img src="${e}"/></div></div>`).join("\n")
             console.log(list);
             var images = document.getElementById("images");
             images.innerHTML = list;

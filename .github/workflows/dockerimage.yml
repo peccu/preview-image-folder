@@ -23,6 +23,6 @@ jobs:
         name: Build and push
         uses: docker/build-push-action@v3
         with:
-          context: ./build/
+          context: .
           push: true
           tags: peccu/preview-image-folder:latest,peccu/preview-image-folder:0.1.0

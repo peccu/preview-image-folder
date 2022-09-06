@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   app:
-    build: ./build
+    image: peccu/preview-image-folder:latest
     restart: always
     stop_signal: SIGKILL
     ports:

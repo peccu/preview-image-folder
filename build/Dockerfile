@@ -13,6 +13,9 @@ RUN tar xzf ${PKG}.tar.gz \
 COPY start.sh /app/
 RUN chmod +x start.sh
 
+ADD . ./
+RUN chmod 755 *.sh
+
 VOLUME /app/images
 EXPOSE 8000
 CMD ["./start.sh"]

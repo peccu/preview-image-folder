@@ -1,5 +1,8 @@
 # preview-image-folder
 
+
+## local version
+
 Start server by
 
 ```
@@ -13,6 +16,16 @@ npm run dev
 Then, you can add images into ./images and the browser should be auto-reloaded and show images in the directory.
 
 You can change directory or image extensions at `start.sh`
+
+## docker version
+
+You can use docker image [peccu/preview-image-folder](https://hub.docker.com/r/peccu/preview-image-folder) from Docker Hub.
+
+You need to mount the image folder into `/app/images` and listening port is 8000.
+
+```
+docker run --name preview-image-folder --rm -d -p 8000:3000 -v $(pwd):/app/images peccu/preview-image-folder:latest
+```
 
 ## docker-compose version
 

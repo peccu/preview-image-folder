@@ -12,9 +12,9 @@ jobs:
   pick-version:
     name: pick-version
     runs-on: ubuntu-latest
-    env:
-      # # Set to force version number, e.g., when no tag exists.
-      # APP_VERSION: TEST-0.0.11
+    # env:
+    #   # Set to force version number, e.g., when no tag exists.
+    #   APP_VERSION: TEST-0.0.11
     outputs:
       app_version: ${{ env.APP_VERSION }}
       pj_name: ${{ env.PJ_NAME }}

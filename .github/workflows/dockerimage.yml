@@ -33,7 +33,9 @@ jobs:
         run: |
           echo "PJ_NAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}" >> $GITHUB_ENV
 
-  docker:
+  build-docker-image:
+    name: build-docker-image
+    needs: ['pick-version']
     runs-on: ubuntu-latest
     env:
       DOCKER_HUB_USER: peccu

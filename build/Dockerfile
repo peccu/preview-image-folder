@@ -1,7 +1,8 @@
 FROM alpine:latest
 
-RUN apk add --update --no-cache rsync
 ARG version
+RUN echo building version=$version
+RUN apk add --update --no-cache rsync
 ENV APP=preview-image-folder
 ENV PKG=${APP}-${version}-x86_64-unknown-linux-musl
 ADD https://github.com/peccu/${APP}/releases/download/${version}/${PKG}.tar.gz /app/

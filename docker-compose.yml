@@ -3,7 +3,28 @@ services:
   app:
     image: peccu/preview-image-folder:latest
     restart: always
+    stop_signal: SIGKILL
     ports:
-      - "3939:3000"
+      - "3939:8000"
     volumes:
       - ~/Downloads/ScreenCapture:/app/images
+
+  # dev:
+  #   image: rust:alpine
+  #   restart: always
+  #   command: sleep infinity
+  #   stop_signal: SIGKILL
+  #   ports:
+  #     - "9090:8000"
+  #   environment:
+  #     - CARGO_HOME=/root/.cargo
+  #   volumes:
+  #     - ./:/app
+  #     # - cargo:/root/.cargo/
+  #     - ./cargo:/root/.cargo
+  #     - ~/Downloads/ScreenCapture:/app/images
+  #   working_dir: /app
+
+# volumes:
+#   cargo:
+#     driver: local

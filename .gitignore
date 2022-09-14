@@ -104,3 +104,9 @@ dist
 .tern-port
 
 *~
+
+
+# Added by cargo
+
+/target
+/cargo

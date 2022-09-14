@@ -17,17 +17,17 @@ name: release
 on:
   push:
     # Enable when testing release infrastructure on a branch.
-    branches:
-      - rust
-    # tags:
-    # - "[0-9]+.[0-9]+.[0-9]+"
+    # branches:
+    #   - rust
+    tags:
+    - "[0-9]+.[0-9]+.[0-9]+"
 jobs:
   create-release:
     name: create-release
     runs-on: ubuntu-latest
-    env:
-      # Set to force version number, e.g., when no tag exists.
-      APP_VERSION: TEST-0.0.12
+    # env:
+    #   # Set to force version number, e.g., when no tag exists.
+    #   APP_VERSION: TEST-0.0.12
     outputs:
       upload_url: ${{ steps.release.outputs.upload_url }}
       app_version: ${{ env.APP_VERSION }}

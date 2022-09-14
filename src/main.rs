@@ -3,7 +3,6 @@ extern crate env_logger;
 extern crate notify;
 extern crate ws;
 
-use urlencoding::decode;
 use std::env;
 use std::fs;
 use std::fs::File;
@@ -13,13 +12,14 @@ use std::sync::mpsc::channel;
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
+use urlencoding::decode;
 
 use clap::{App, Arg};
 // v5
 // use notify::{Watcher, RecursiveMode, Event};
 // use notify::EventKind::{Create, Modify, Remove};
 // v4
-use notify::DebouncedEvent::{Create, Write, Remove, Rename};
+use notify::DebouncedEvent::{Create, Remove, Rename, Write};
 use notify::{watcher, RecursiveMode, Watcher};
 use ws::{connect, listen, CloseCode, Handler, Message, Request, Response, Sender};
 
@@ -113,7 +113,7 @@ fn list_files_by_reverse_modified(target: &str) -> Vec<fs::DirEntry> {
     let mut sorted = paths.filter_map(|e| e.ok()).collect::<Vec<fs::DirEntry>>();
     sorted.sort_by(|a, b| {
         b.metadata()
-        .unwrap()
+            .unwrap()
             .modified()
             .unwrap()
             .cmp(&a.metadata().unwrap().modified().unwrap())
@@ -138,7 +138,12 @@ fn list_images(target: &str) -> Vec<u8> {
     vec_to_json(list_files_by_reverse_modified(target))
 }
 
-fn response_with_contenttype<R>(status: u16, reason: R, body: Vec<u8>, contenttype: Vec<u8>) -> Response
+fn response_with_contenttype<R>(
+    status: u16,
+    reason: R,
+    body: Vec<u8>,
+    contenttype: Vec<u8>,
+) -> Response
 where
     R: Into<String>,
 {
@@ -162,11 +167,26 @@ impl Handler for Server<'_> {
             "/ws" => Response::from_request(req),
 
             // Create a custom response
-            "/" => Ok(response_with_contenttype(200, "OK", genpage(), "text/html".into())),
+            "/" => Ok(response_with_contenttype(
+                200,
+                "OK",
+                genpage(),
+                "text/html".into(),
+            )),
 
-            "/index.html" => Ok(response_with_contenttype(200, "OK", genpage(), "text/html".into())),
+            "/index.html" => Ok(response_with_contenttype(
+                200,
+                "OK",
+                genpage(),
+                "text/html".into(),
+            )),
 
-            "/images.json" => Ok(response_with_contenttype(200, "OK", list_images(self.target), "application/json".into())),
+            "/images.json" => Ok(response_with_contenttype(
+                200,
+                "OK",
+                list_images(self.target),
+                "application/json".into(),
+            )),
 
             other => Ok(Response::new(
                 200,
@@ -307,7 +327,8 @@ fn main() {
                     Remove(_) => refresh(client_url),
                     Rename(_, _) => refresh(client_url),
                     _ => Ok(()),
-                }.unwrap()
+                }
+                .unwrap()
             }
             Err(e) => println!("watch error: {:?}", e),
         }

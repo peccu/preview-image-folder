@@ -79,7 +79,6 @@ static INDEX_HTML_TAIL: &'static [u8] = br#"
             // append("images: " + JSON.stringify(data, null, 2) + "\n")
             var list = data
                 .filter(e=>e.match(/\.png$/))
-                .sort().reverse()
                 .map(e=>`
         <div class="item">
             <div class="name">${e}</div>
@@ -109,24 +108,34 @@ fn genpage() -> Vec<u8> {
     [INDEX_HTML_HEAD, INDEX_HTML_TAIL].concat().to_vec()
 }
 
-fn list_images(target: &str) -> Vec<u8> {
-    // https://stackoverflow.com/a/31226040
-    let entries = fs::read_dir(target)
+fn list_files_by_reverse_modified(target: &str) -> Vec<fs::DirEntry> {
+    let paths: fs::ReadDir = fs::read_dir(target).unwrap();
+    let mut sorted = paths.filter_map(|e| e.ok()).collect::<Vec<fs::DirEntry>>();
+    sorted.sort_by(|a, b| {
+        b.metadata()
         .unwrap()
-        .filter_map(|res| {
-            res.ok().and_then(|e| {
-                e.path()
-                    .file_name()
-                    .and_then(|n| n.to_str().map(|s| String::from(s)))
-            })
-        })
+            .modified()
+            .unwrap()
+            .cmp(&a.metadata().unwrap().modified().unwrap())
+    });
+    sorted
+}
+
+fn vec_to_json(vec: Vec<fs::DirEntry>) -> Vec<u8> {
+    let entries = vec
+        .into_iter()
+        .map(|e| e.file_name().into_string().ok())
+        .map(|s| String::from(s.unwrap()))
         .collect::<Vec<String>>();
-    // TODO sort by descending
 
     // https://gist.github.com/jimmychu0807/9a89355e642afad0d2aeda52e6ad2424
     format!("[\"{}\"]", entries.join("\",\""))
         .as_bytes()
         .to_vec()
+}
+
+fn list_images(target: &str) -> Vec<u8> {
+    vec_to_json(list_files_by_reverse_modified(target))
 }
 
 // Server web application handler

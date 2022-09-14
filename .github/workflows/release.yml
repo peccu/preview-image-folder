@@ -218,7 +218,7 @@ jobs:
           context: ./build
           push: true
           build-args: |
-	    version=${{ needs.create-release.outputs.app_version }}
+            version=${{ needs.create-release.outputs.app_version }}
           tags: |
             ${{ env.DOCKER_HUB_USER }}/${{ needs.create-release.outputs.pj_name }}:latest
             ${{ env.DOCKER_HUB_USER }}/${{ needs.create-release.outputs.pj_name }}:${{ needs.create-release.outputs.app_version }}

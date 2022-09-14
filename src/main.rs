@@ -311,3 +311,4 @@ fn main() {
 }
 
 // curl -Lo 1.png https://picsum.photos/200/300
+// cargo run -- --host 0.0.0.0 ./src

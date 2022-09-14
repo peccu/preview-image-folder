@@ -138,6 +138,15 @@ fn list_images(target: &str) -> Vec<u8> {
     vec_to_json(list_files_by_reverse_modified(target))
 }
 
+fn response_with_contenttype<R>(status: u16, reason: R, body: Vec<u8>, contenttype: Vec<u8>) -> Response
+where
+    R: Into<String>,
+{
+    let mut res = Response::new(status, reason, body);
+    res.headers_mut().push(("Content-type".into(), contenttype));
+    res
+}
+
 // Server web application handler
 struct Server<'a> {
     out: Sender,
@@ -153,11 +162,11 @@ impl Handler for Server<'_> {
             "/ws" => Response::from_request(req),
 
             // Create a custom response
-            "/" => Ok(Response::new(200, "OK", genpage())),
+            "/" => Ok(response_with_contenttype(200, "OK", genpage(), "text/html".into())),
 
-            "/index.html" => Ok(Response::new(200, "OK", genpage())),
+            "/index.html" => Ok(response_with_contenttype(200, "OK", genpage(), "text/html".into())),
 
-            "/images.json" => Ok(Response::new(200, "OK", list_images(self.target))),
+            "/images.json" => Ok(response_with_contenttype(200, "OK", list_images(self.target), "application/json".into())),
 
             other => Ok(Response::new(
                 200,

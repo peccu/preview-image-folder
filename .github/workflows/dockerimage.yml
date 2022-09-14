@@ -58,6 +58,7 @@ jobs:
         with:
           context: ./build
           push: true
+          build-args: ${{ needs.pick-version.outputs.app_version }}
           tags: |
             ${{ env.DOCKER_HUB_USER }}/${{ needs.pick-version.outputs.pj_name }}:latest
             ${{ env.DOCKER_HUB_USER }}/${{ needs.pick-version.outputs.pj_name }}:${{ needs.pick-version.outputs.app_version }}

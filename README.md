@@ -1,5 +1,15 @@
 # preview-image-folder
 
+Preview images in folder with auto refresh when the new images added.
+
+Main usecase is to check screen captured image.
+
+## install
+
+- download package from release page
+- extract binary
+- add it to PATH or call it with relative path
+- `preview-image-folder --help` shows help
 
 ## local version
 

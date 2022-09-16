@@ -6,7 +6,7 @@ Main usecase is to check screen captured image.
 
 ## install
 
-- download package from release page
+- download package from [release page](https://github.com/peccu/preview-image-folder/releases)
 - extract binary
 - add it to PATH or call it with relative path
 - `preview-image-folder --help` shows help

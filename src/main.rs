@@ -85,7 +85,7 @@ static INDEX_HTML_TAIL: &'static [u8] = br#"
             var list = data
                 .filter(e=>e.match(/\.png$/))
                 .map(e=>`
-        <div class="item">
+        <div class="item" id="${e}">
             <div class="name">${e}</div>
             <div class="image">
                 <img src="${e}"/>
@@ -95,6 +95,10 @@ static INDEX_HTML_TAIL: &'static [u8] = br#"
             var images = document.getElementById("images");
             images.innerHTML = list;
         };
+        var scrollToFirst = (data) => {
+            var list = data.filter(e=>e.match(/\.png$/));
+            document.getElementById(list[0]).scrollIntoView()
+        };
         var images = fetch("./images.json").then(r => r.json()).then(show_images)
         var fetch_images = () => {
             fetch("./images.json")
@@ -102,6 +106,7 @@ static INDEX_HTML_TAIL: &'static [u8] = br#"
             .then((data) => {
                 console.log(data);
                 show_images(data);
+                scrollToFirst(data);
             });
         }
     </script>

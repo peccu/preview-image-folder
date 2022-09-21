@@ -40,14 +40,19 @@ static INDEX_HTML_HEAD: &'static [u8] = br#"
       h1 {
           padding: 1em 0px;
       }
-      .image, .image img {
+      .image {
+          text-align: center;
+      }
+      .image img {
           max-width: 100%;
+          max-height: 90vh;
       }
       .name {
           margin-bottom: 5px;
           padding-left: 3px;
           border-left: solid 10px gray;
           border-bottom: solid 1px gray;
+          max-height: 10vh;
       }
       .item {
           margin-bottom: 15px;
@@ -80,25 +85,32 @@ static INDEX_HTML_TAIL: &'static [u8] = br#"
             var list = data
                 .filter(e=>e.match(/\.png$/))
                 .map(e=>`
-        <div class="item">
+        <div class="item" id="${e}">
             <div class="name">${e}</div>
             <div class="image">
-                <img src="${e}"/>
+                <img alt="${e}" src="${e}"/>
             </div>
         </div>`).join("\n");
             console.log(list);
             var images = document.getElementById("images");
             images.innerHTML = list;
         };
-        var images = fetch("./images.json").then(r => r.json()).then(show_images)
+        var scrollToFirst = (data) => {
+            var list = data.filter(e=>e.match(/\.png$/));
+            document.getElementById(list[0]).scrollIntoView()
+        };
+        var images = [];
         var fetch_images = () => {
             fetch("./images.json")
             .then((response) => response.json())
             .then((data) => {
+                images = data;
                 console.log(data);
                 show_images(data);
+                scrollToFirst(data);
             });
-        }
+        };
+        fetch_images();
     </script>
   </body>
 </html>
@@ -171,21 +183,21 @@ impl Handler for Server<'_> {
                 200,
                 "OK",
                 genpage(),
-                "text/html".into(),
+                "text/html; charset=UTF-8".into(),
             )),
 
             "/index.html" => Ok(response_with_contenttype(
                 200,
                 "OK",
                 genpage(),
-                "text/html".into(),
+                "text/html; charset=UTF-8".into(),
             )),
 
             "/images.json" => Ok(response_with_contenttype(
                 200,
                 "OK",
                 list_images(self.target),
-                "application/json".into(),
+                "application/json; charset=UTF-8".into(),
             )),
 
             other => Ok(Response::new(

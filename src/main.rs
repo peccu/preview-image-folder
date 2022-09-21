@@ -99,16 +99,18 @@ static INDEX_HTML_TAIL: &'static [u8] = br#"
             var list = data.filter(e=>e.match(/\.png$/));
             document.getElementById(list[0]).scrollIntoView()
         };
-        var images = fetch("./images.json").then(r => r.json()).then(show_images)
+        var images = [];
         var fetch_images = () => {
             fetch("./images.json")
             .then((response) => response.json())
             .then((data) => {
+                images = data;
                 console.log(data);
                 show_images(data);
                 scrollToFirst(data);
             });
-        }
+        };
+        fetch_images();
     </script>
   </body>
 </html>

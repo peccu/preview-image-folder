@@ -88,7 +88,7 @@ static INDEX_HTML_TAIL: &'static [u8] = br#"
         <div class="item" id="${e}">
             <div class="name">${e}</div>
             <div class="image">
-                <img src="${e}"/>
+                <img alt="${e}" src="${e}"/>
             </div>
         </div>`).join("\n");
             console.log(list);
@@ -181,21 +181,21 @@ impl Handler for Server<'_> {
                 200,
                 "OK",
                 genpage(),
-                "text/html".into(),
+                "text/html; charset=UTF-8".into(),
             )),
 
             "/index.html" => Ok(response_with_contenttype(
                 200,
                 "OK",
                 genpage(),
-                "text/html".into(),
+                "text/html; charset=UTF-8".into(),
             )),
 
             "/images.json" => Ok(response_with_contenttype(
                 200,
                 "OK",
                 list_images(self.target),
-                "application/json".into(),
+                "application/json; charset=UTF-8".into(),
             )),
 
             other => Ok(Response::new(

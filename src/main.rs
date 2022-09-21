@@ -40,14 +40,19 @@ static INDEX_HTML_HEAD: &'static [u8] = br#"
       h1 {
           padding: 1em 0px;
       }
-      .image, .image img {
+      .image {
+          text-align: center;
+      }
+      .image img {
           max-width: 100%;
+          max-height: 90vh;
       }
       .name {
           margin-bottom: 5px;
           padding-left: 3px;
           border-left: solid 10px gray;
           border-bottom: solid 1px gray;
+          max-height: 10vh;
       }
       .item {
           margin-bottom: 15px;

@@ -4,12 +4,7 @@ extern crate notify;
 extern crate ws;
 extern crate preview_image_folder;
 
-use preview_image_folder::genpage;
-use std::env;
-use std::fs;
-use std::fs::File;
-use std::io::Read;
-// use std::path::Path;
+use preview_image_folder::{genpage, files};
 use std::sync::mpsc::channel;
 use std::thread;
 use std::thread::sleep;
@@ -23,36 +18,6 @@ use urlencoding::decode;
 use notify::DebouncedEvent::{Create, Remove, Rename, Write};
 use notify::{watcher, RecursiveMode, Watcher};
 use ws::{connect, listen, CloseCode, Handler, Message, Request, Response, Sender};
-
-fn list_files_by_reverse_modified(target: &str) -> Vec<fs::DirEntry> {
-    let paths: fs::ReadDir = fs::read_dir(target).unwrap();
-    let mut sorted = paths.filter_map(|e| e.ok()).collect::<Vec<fs::DirEntry>>();
-    sorted.sort_by(|a, b| {
-        b.metadata()
-            .unwrap()
-            .modified()
-            .unwrap()
-            .cmp(&a.metadata().unwrap().modified().unwrap())
-    });
-    sorted
-}
-
-fn vec_to_json(vec: Vec<fs::DirEntry>) -> Vec<u8> {
-    let entries = vec
-        .into_iter()
-        .map(|e| e.file_name().into_string().ok())
-        .map(|s| String::from(s.unwrap()))
-        .collect::<Vec<String>>();
-
-    // https://gist.github.com/jimmychu0807/9a89355e642afad0d2aeda52e6ad2424
-    format!("[\"{}\"]", entries.join("\",\""))
-        .as_bytes()
-        .to_vec()
-}
-
-fn list_images(target: &str) -> Vec<u8> {
-    vec_to_json(list_files_by_reverse_modified(target))
-}
 
 fn response_with_contenttype<R>(
     status: u16,
@@ -100,14 +65,14 @@ impl Handler for Server<'_> {
             "/images.json" => Ok(response_with_contenttype(
                 200,
                 "OK",
-                list_images(self.target),
+                files::list_images(self.target),
                 "application/json; charset=UTF-8".into(),
             )),
 
             other => Ok(Response::new(
                 200,
                 "OK",
-                read_file(format!("{}{}", self.target, decode(other).expect("UTF-8")).as_str()),
+                files::read_file(format!("{}{}", self.target, decode(other).expect("UTF-8")).as_str()),
             )),
             // _ => Ok(Response::new(404, "Not Found", b"404 - Not Found".to_vec())),
         }
@@ -117,22 +82,6 @@ impl Handler for Server<'_> {
     fn on_message(&mut self, msg: Message) -> ws::Result<()> {
         // Broadcast to all connections
         self.out.broadcast(msg)
-    }
-}
-
-fn _read_file(name: &str) -> std::io::Result<Vec<u8>> {
-    let mut file = File::open(name)?;
-    let mut buf = Vec::new();
-    file.read_to_end(&mut buf)?;
-    Ok(buf)
-}
-
-fn read_file(name: &str) -> Vec<u8> {
-    let path = env::current_dir();
-    println!("pwd: {:?} -> {:?}", path, name);
-    match _read_file(name) {
-        Ok(buf) => buf,
-        _ => b"Error".to_vec(),
     }
 }
 
@@ -146,7 +95,7 @@ fn main() {
     let target = matches.value_of("directory").unwrap();
     println!("watching: {}", target);
 
-    println!("{:?}", std::str::from_utf8(&list_images(target)).unwrap());
+    println!("{:?}", std::str::from_utf8(&files::list_images(target)).unwrap());
 
     let host = matches.value_of("host").unwrap();
     let port = matches.value_of("port").unwrap();

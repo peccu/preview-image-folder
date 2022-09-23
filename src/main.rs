@@ -1,8 +1,8 @@
 extern crate clap;
 extern crate env_logger;
 extern crate notify;
-extern crate ws;
 extern crate preview_image_folder;
+extern crate ws;
 
 use preview_image_folder::{files, spawn_server};
 use std::sync::mpsc::channel;
@@ -28,7 +28,10 @@ fn main() {
     let target = matches.value_of("directory").unwrap();
     println!("watching: {}", target);
 
-    println!("{:?}", std::str::from_utf8(&files::list_images(target)).unwrap());
+    println!(
+        "{:?}",
+        std::str::from_utf8(&files::list_images(target)).unwrap()
+    );
 
     let host = matches.value_of("host").unwrap();
     let port = matches.value_of("port").unwrap();

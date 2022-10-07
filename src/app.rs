@@ -8,7 +8,7 @@ pub struct AppParam {
 
 fn parse_arg() -> AppParam {
     let matches = App::new("Preview Image Folder with auto refresh.")
-    .version("0.1")
+    .version("0.5.0")
     .about("Show images in specified folder and refresh when images in folder is updated.")
     .arg(
         Arg::with_name("host")

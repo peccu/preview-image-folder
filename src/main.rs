@@ -72,7 +72,6 @@ fn main() {
 
     let target = app.get_target();
     println!("Watching: {}", target);
-
     println!(
         "Current file list: {:?}",
         std::str::from_utf8(&files::list_images(&target)).unwrap()

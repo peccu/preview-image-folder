@@ -110,3 +110,8 @@ fn main() {
 
 // curl -Lo 1.png https://picsum.photos/200/300
 // cargo run -- --host 0.0.0.0 ./src
+
+// which rsync 2>/dev/null || apk add rsync
+// mkdir -p /tmp/public/images
+// while true; do rsync -az --delete ./images/
+// cargo run -- --host 0.0.0.0 /tmp/public/images/

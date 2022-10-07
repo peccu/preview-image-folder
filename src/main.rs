@@ -5,18 +5,63 @@ extern crate preview_image_folder;
 extern crate ws;
 
 use preview_image_folder::{files, spawn_server};
-use std::sync::mpsc::channel;
-use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
 
+use std::path::Path;
+
 // v5
-// use notify::{Watcher, RecursiveMode, Event};
-// use notify::EventKind::{Create, Modify, Remove};
-// v4
-use notify::DebouncedEvent::{Create, Remove, Rename, Write};
-use notify::{watcher, RecursiveMode, Watcher};
+use notify::event::CreateKind;
+use notify::event::DataChange;
+use notify::event::ModifyKind;
+use notify::EventKind::{Create, Modify, Remove};
+use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use ws::{connect, CloseCode};
+
+fn watch<P: AsRef<Path>>(path: P, url: String) -> notify::Result<()> {
+    fn refresh(url: String) -> ws::Result<()> {
+        connect(format!("ws://{}/ws", url), |out| {
+            out.send("refresh!").unwrap();
+
+            move |msg| {
+                println!("Client got message '{}'. ", msg);
+                out.close(CloseCode::Normal)
+            }
+        })
+        .unwrap();
+        Ok(())
+    }
+
+    fn refresh_by_event(event: notify::Event, url: String) {
+        match event.kind {
+            Create(CreateKind::File) => Some(refresh(url)),
+            Modify(ModifyKind::Data(DataChange::Content)) => Some(refresh(url)),
+            Remove(_) => Some(refresh(url)),
+            _ => Some(Ok(())),
+        };
+        println!("changed: {:?}", event);
+    }
+
+    let (tx, rx) = std::sync::mpsc::channel();
+
+    // Automatically select the best implementation for your platform.
+    // You can also access each implementation directly e.g. INotifyWatcher.
+    let mut watcher = RecommendedWatcher::new(tx, notify::Config::default())?;
+
+    // Add a path to be watched. All files and directories at that path and
+    // below will be monitored for changes.
+    watcher.watch(path.as_ref(), RecursiveMode::NonRecursive)?;
+
+    for res in rx {
+        let client_url = url.clone();
+        match res {
+            Ok(event) => refresh_by_event(event, client_url),
+            Err(e) => println!("watch error: {:?}", e),
+        }
+    }
+
+    Ok(())
+}
 
 fn main() {
     // Setup logging
@@ -34,77 +79,23 @@ fn main() {
     );
 
     let url: String = app.get_url();
-    let server_url = url.clone();
     println!();
-    println!("Listening on http://{}/", server_url);
+    println!("Listening on http://{}/", url);
     println!("(If this is running in the container, you should change url)");
 
     // Server thread
     // Listen on an address and call the closure for each connection
-    let server_target = format!("{}", target);
-    let server = spawn_server(server_url, server_target);
+    let server_url = url.clone();
+    let server_target = target.clone();
+    spawn_server(server_url, server_target);
 
     // Give the server a little time to get going
     sleep(Duration::from_millis(10));
 
-    // send refresh message
-    fn refresh(url: String) -> ws::Result<()> {
-        connect(format!("ws://{}/ws", url), |out| {
-            out.send("refresh!").unwrap();
-
-            move |msg| {
-                println!("Client got message '{}'. ", msg);
-                out.close(CloseCode::Normal)
-            }
-        })
-        .unwrap();
-        Ok(())
+    // watch files
+    if let Err(e) = watch(target, url) {
+        println!("error: {:?}", e)
     }
-
-    // v5
-    // let mut watcher = notify::recommended_watcher(move |res: Result<Event, _>| {
-    //     println!("event {:?}", res);
-    //     res.ok().and_then(|event| {
-    //         println!("event {:?}", event);
-    //         let client_url = url.clone();
-    //         match event.kind {
-    //             Create(_) => Some(refresh(client_url)),
-    //             Modify(_) => Some(refresh(client_url)),
-    //             Remove(_) => Some(refresh(client_url)),
-    //             _ => Some(Ok(())),
-    //         }
-    //     }).unwrap().unwrap()
-    // }).unwrap();
-    // let client_target = format!("{}", target);
-    // let client = thread::spawn(move || {
-    //     watcher.watch(Path::new(&client_target), RecursiveMode::Recursive).unwrap();
-    // });
-
-    // v4
-    let (sender, receiver) = channel();
-    let mut watcher = watcher(sender, Duration::from_secs(1)).unwrap();
-    watcher.watch(target, RecursiveMode::NonRecursive).unwrap();
-    let client = thread::spawn(move || loop {
-        match receiver.recv() {
-            Ok(event) => {
-                println!("event {:?}", event);
-                let client_url = url.clone();
-                match event {
-                    Create(_) => refresh(client_url),
-                    Write(_) => refresh(client_url),
-                    Remove(_) => refresh(client_url),
-                    Rename(_, _) => refresh(client_url),
-                    _ => Ok(()),
-                }
-                .unwrap()
-            }
-            Err(e) => println!("watch error: {:?}", e),
-        }
-    });
-
-    let _ = server.join();
-    let _ = client.join();
-
     println!("All done.")
 }
 

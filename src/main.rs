@@ -23,24 +23,21 @@ fn main() {
     env_logger::init();
 
     // Parse command line arguments
-    let matches = preview_image_folder::parse_arg();
+    let app = preview_image_folder::AppParam::new();
 
-    let target = matches.value_of("directory").unwrap();
-    println!("watching: {}", target);
+    let target = app.get_target();
+    println!("Watching: {}", target);
 
     println!(
-        "{:?}",
-        std::str::from_utf8(&files::list_images(target)).unwrap()
+        "Current file list: {:?}",
+        std::str::from_utf8(&files::list_images(&target)).unwrap()
     );
 
-    let host = matches.value_of("host").unwrap();
-    let port = matches.value_of("port").unwrap();
-    let url: String = format!("{}:{}", host, port);
+    let url: String = app.get_url();
     let server_url = url.clone();
-    println!(
-        "Listening on http://{}/ (If this is running in the container, you should change url)",
-        server_url
-    );
+    println!();
+    println!("Listening on http://{}/", server_url);
+    println!("(If this is running in the container, you should change url)");
 
     // Server thread
     // Listen on an address and call the closure for each connection
@@ -113,3 +110,8 @@ fn main() {
 
 // curl -Lo 1.png https://picsum.photos/200/300
 // cargo run -- --host 0.0.0.0 ./src
+
+// which rsync 2>/dev/null || apk add rsync
+// mkdir -p /tmp/public/images
+// while true; do rsync -az --delete ./images/
+// cargo run -- --host 0.0.0.0 /tmp/public/images/

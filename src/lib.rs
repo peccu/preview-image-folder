@@ -8,3 +8,6 @@ pub mod files;
 
 mod server;
 pub use crate::server::spawn_server;
+
+mod watcher;
+pub use crate::watcher::watch;

@@ -23,19 +23,17 @@ fn main() {
     env_logger::init();
 
     // Parse command line arguments
-    let matches = preview_image_folder::parse_arg();
+    let app = preview_image_folder::AppParam::new();
 
-    let target = matches.value_of("directory").unwrap();
+    let target = app.get_target();
     println!("watching: {}", target);
 
     println!(
         "{:?}",
-        std::str::from_utf8(&files::list_images(target)).unwrap()
+        std::str::from_utf8(&files::list_images(&target)).unwrap()
     );
 
-    let host = matches.value_of("host").unwrap();
-    let port = matches.value_of("port").unwrap();
-    let url: String = format!("{}:{}", host, port);
+    let url: String = app.get_url();
     let server_url = url.clone();
     println!(
         "Listening on http://{}/ (If this is running in the container, you should change url)",

@@ -26,19 +26,18 @@ fn main() {
     let app = preview_image_folder::AppParam::new();
 
     let target = app.get_target();
-    println!("watching: {}", target);
+    println!("Watching: {}", target);
 
     println!(
-        "{:?}",
+        "Current file list: {:?}",
         std::str::from_utf8(&files::list_images(&target)).unwrap()
     );
 
     let url: String = app.get_url();
     let server_url = url.clone();
-    println!(
-        "Listening on http://{}/ (If this is running in the container, you should change url)",
-        server_url
-    );
+    println!();
+    println!("Listening on http://{}/", server_url);
+    println!("(If this is running in the container, you should change url)");
 
     // Server thread
     // Listen on an address and call the closure for each connection
